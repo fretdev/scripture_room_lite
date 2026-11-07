@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F7F4EC">
+<title>Scripture Room</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scripture Room">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-forest: #244638;
+  --color-sage: #657D69;
+  --color-ivory: #F7F4EC;
+  --color-mist: #E9EDE4;
+  --color-gold: #B2935D;
+  --color-charcoal: #454B45;
+  --color-border: #DEDCCF;
+  --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-ivory);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+button { font-family: inherit; }
+
+/* ---------- Editing mode ---------- */
+.topbar { padding: max(14px, env(safe-area-inset-top)) 16px 4px; max-width: 1100px; margin: 0 auto; }
+.topbar h1 { margin: 0; font: 600 1.9rem/1.1 var(--font-serif); color: var(--color-forest); }
+.topbar p { margin: 4px 0 0; font-size: .9rem; color: var(--color-sage); }
+
+.layout { max-width: 1100px; margin: 0 auto; padding: 8px 16px 0; display: grid; gap: 20px; grid-template-columns: 1fr; }
+.field { display: block; margin-bottom: 14px; }
+.field span { display: block; margin-bottom: 5px; font-size: .88rem; font-weight: 500; color: var(--color-sage); }
+.field input, .field textarea {
+  width: 100%; padding: 12px 13px; font: 400 16px/1.45 var(--font-sans); color: var(--color-charcoal);
+  background: #fff; border: 1px solid var(--color-border); border-radius: 10px;
+}
+.field textarea { resize: vertical; min-height: 96px; }
+.field input:focus, .field textarea:focus, button:focus-visible { outline: 2px solid var(--color-forest); outline-offset: 2px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.preview-title { margin: 0 0 8px; font: 600 1.3rem var(--font-serif); color: var(--color-forest); }
+
+.actions {
+  grid-column: 1 / -1; position: sticky; bottom: 0; z-index: 5;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 12px 0 max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--color-ivory) 80%, rgba(247,244,236,0));
+}
+.btn {
+  min-height: 52px; padding: 0 18px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--color-forest); background: transparent; color: var(--color-forest);
+}
+.btn-primary { grid-column: 1 / -1; background: var(--color-forest); color: var(--color-ivory); font-size: 1.05rem; }
+
+/* ---------- Devotional card (shared by preview, screenshot and print) ---------- */
+.card {
+  --base: 16px;
+  font-size: var(--base);
+  width: 100%; max-width: 760px; margin: 0 auto;
+  padding: 1.5em 1.35em 1.6em;
+  background: color-mix(in srgb, var(--color-ivory) 55%, #fff);
+  border: 1px solid var(--color-border); border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(36, 70, 56, .08);
+  line-height: 1.55; text-align: left;
+}
+.card-date { margin: 0; text-align: center; font-size: .78em; font-weight: 500; letter-spacing: .06em; color: var(--color-sage); }
+.card-title { margin: .35em 0 0; text-align: center; font: 600 2em/1.12 var(--font-serif); color: var(--color-forest); overflow-wrap: anywhere; }
+.card-ref { margin: .55em 0 0; text-align: center; font-size: .92em; font-weight: 600; color: var(--color-forest); }
+.card-ref .translation { margin-left: .5em; padding-left: .6em; border-left: 1px solid var(--color-gold); font-weight: 400; color: var(--color-sage); }
+.rule { width: 3em; height: 1px; margin: 1em auto; background: var(--color-gold); border: 0; }
+.scripture { margin: 1em 0 0; padding: 1em 1.05em; background: var(--color-mist); border-radius: 12px; border-left: 3px solid var(--color-gold); }
+.scripture p { margin: 0; font: italic 500 1.28em/1.42 var(--font-serif); color: var(--color-forest); white-space: pre-line; }
+.card-section { margin-top: 1.05em; }
+.card-section h2 { margin: 0 0 .15em; font: 700 1.3em/1.2 var(--font-serif); color: var(--color-forest); }
+.card-section p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: .97em; }
+.card-section.closing { margin-top: 1.2em; padding-top: 1em; border-top: 1px solid var(--color-gold); text-align: center; }
+.card-section.closing p { font: italic 500 1.2em/1.45 var(--font-serif); color: var(--color-forest); }
+
+/* ---------- Screenshot mode ---------- */
+.stage {
+  min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center;
+  padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+  background: var(--color-ivory);
+}
+.stage[hidden] { display: none; }
+body.screenshot .app { display: none; }
+.controls {
+  position: fixed; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 10; transition: opacity .3s;
+}
+.controls.faded { opacity: 0; pointer-events: none; }
+.controls button {
+  min-height: 40px; padding: 0 14px; font-size: .85rem; font-weight: 500; cursor: pointer;
+  color: var(--color-forest); background: rgba(247, 244, 236, .92); border: 1px solid var(--color-border); border-radius: 999px;
+}
+
+@media (min-width: 700px) {
+  .card { padding: 2.2em 2.4em 2.3em; border-radius: 22px; }
+  .stage { padding: 28px; }
+}
+@media (min-width: 900px) {
+  .layout { grid-template-columns: minmax(340px, 440px) 1fr; align-items: start; }
+  .preview-wrap { position: sticky; top: 12px; }
+  .card { --base: 17px; }
+}
+@media (max-width: 360px) { .row { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .controls { transition: none; } }
+
+/* ---------- Print: card only ---------- */
+@page { margin: 12mm; }
+@media print {
+  body { background: #fff; }
+  .topbar, .editor-form, .actions, .controls, .preview-title { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .stage { min-height: 0; padding: 0; display: block; background: #fff; }
+  .card { box-shadow: none; break-inside: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <h1>Scripture Room</h1>
+    <p>Write today's devotional, then tap Create for a screenshot-ready card.</p>
+  </header>
+  <main class="layout">
+    <section class="editor-form" aria-label="Devotional form">
+      <form id="devotionalForm" autocomplete="off" onsubmit="return false"></form>
+    </section>
+    <section class="preview-wrap" aria-label="Live preview">
+      <h2 class="preview-title">Live preview</h2>
+      <div id="previewMount"></div>
+    </section>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="createButton">Create Devotional Card</button>
+      <button type="button" class="btn" id="sampleButton">Load sample</button>
+      <button type="button" class="btn" id="clearButton">Clear all</button>
+    </div>
+  </main>
+</div>
+
+<div class="stage" id="stage" hidden>
+  <div id="stageMount" style="width:100%"></div>
+  <nav class="controls" id="controls" aria-label="Card actions">
+    <button type="button" id="backButton">Back to editor</button>
+    <button type="button" id="printButton">Print / Save as PDF</button>
+  </nav>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
+
+  var STORAGE_KEY = "devotional-card-draft-v1";
+
+  // Every editable field: key, label, input type, rows (for text areas), placeholder.
+  var FIELDS = [
+    { key: "date", label: "Date", type: "date" },
+    { key: "title", label: "Devotional title / theme", type: "text", placeholder: "e.g. Peace That Guards the Heart" },
+    { key: "reference", label: "Bible reference", type: "text", placeholder: "e.g. Philippians 4:6-7", half: true },
+    { key: "translation", label: "Bible translation", type: "text", placeholder: "e.g. KJV", half: true },
+    { key: "scripture", label: "Scripture passage", type: "textarea", rows: 4 },
+    { key: "lesson", label: "Lesson", type: "textarea", rows: 3 },
+    { key: "reflection", label: "Thoughts and reflection", type: "textarea", rows: 4 },
+    { key: "insights", label: "Insights from the Holy Spirit", type: "textarea", rows: 3 },
+    { key: "application", label: "Practical application", type: "textarea", rows: 3 },
+    { key: "prayer", label: "Closing prayer", type: "textarea", rows: 3 }
+  ];
+
+  // Body sections shown after the Scripture block, in order. Hidden when empty.
+  var BODY_SECTIONS = [
+    { key: "lesson", heading: "Lesson" },
+    { key: "reflection", heading: "Thoughts and Reflection" },
+    { key: "insights", heading: "Insights from the Holy Spirit" },
+    { key: "application", heading: "Practical Application" },
+    { key: "prayer", heading: "Closing Prayer", className: "closing" }
+  ];
+
+  var SAMPLE = {
+    date: todayAsInputValue(),
+    title: "Peace That Guards the Heart",
+    reference: "Philippians 4:6-7",
+    translation: "KJV",
+    scripture: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.",
+    lesson: "Anxiety is not answered by trying harder to control things, but by bringing every concern to God with a thankful heart.",
+    reflection: "Paul does not say our problems are small. He says our access to God is greater. Prayer turns worry into conversation, and thanksgiving reminds us of His faithfulness in the past.",
+    insights: "God's peace is not the absence of trouble. It stands guard over our hearts and minds like a sentry, even while the situation has not yet changed.",
+    application: "Name one worry this morning. Pray about it out loud, thank God for one thing He has already done, and then leave it with Him.",
+    prayer: "Father, I give You what weighs on me today. Guard my heart and mind with Your peace, and help me trust You with the things I cannot control. In Jesus' name, Amen."
+  };
+
+  var form = document.getElementById("devotionalForm");
+  var previewMount = document.getElementById("previewMount");
+  var stage = document.getElementById("stage");
+  var stageMount = document.getElementById("stageMount");
+  var controls = document.getElementById("controls");
+  var inputs = {};
+  var hideControlsTimer = null;
+
+  function todayAsInputValue() {
+    var now = new Date();
+    var month = String(now.getMonth() + 1).padStart(2, "0");
+    var day = String(now.getDate()).padStart(2, "0");
+    return now.getFullYear() + "-" + month + "-" + day;
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    var parts = value.split("-");
+    var date = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    if (isNaN(date)) return value;
+    return date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  }
+
+  function element(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  // ---------- Form ----------
+  function buildForm() {
+    var pendingRow = null;
+    FIELDS.forEach(function (field) {
+      var label = element("label", "field");
+      label.appendChild(element("span", "", field.label));
+      var input = document.createElement(field.type === "textarea" ? "textarea" : "input");
+      if (field.type !== "textarea") input.type = field.type;
+      if (field.rows) input.rows = field.rows;
+      if (field.placeholder) input.placeholder = field.placeholder;
+      input.name = field.key;
+      input.addEventListener("input", onFormChange);
+      label.appendChild(input);
+      inputs[field.key] = input;
+
+      if (field.half) {
+        if (!pendingRow) { pendingRow = element("div", "row"); form.appendChild(pendingRow); }
+        pendingRow.appendChild(label);
+      } else {
+        pendingRow = null;
+        form.appendChild(label);
+      }
+    });
+  }
+
+  function readValues() {
+    var values = {};
+    FIELDS.forEach(function (field) { values[field.key] = inputs[field.key].value.trim(); });
+    return values;
+  }
+
+  function writeValues(values) {
+    FIELDS.forEach(function (field) { inputs[field.key].value = values[field.key] || ""; });
+    onFormChange();
+  }
+
+  function saveDraft() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(readValues())); } catch (error) { /* storage may be unavailable */ }
+  }
+
+  function loadDraft() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (error) { return null; }
+  }
+
+  // ---------- Card ----------
+  function buildCard(values) {
+    var card = element("article", "card");
+    var hasContent = false;
+
+    if (values.date) { card.appendChild(element("p", "card-date", formatDate(values.date))); hasContent = true; }
+    if (values.title) { card.appendChild(element("h1", "card-title", values.title)); hasContent = true; }
+
+    if (values.reference || values.translation) {
+      var reference = element("p", "card-ref", values.reference);
+      if (values.translation) reference.appendChild(element("span", "translation", values.translation));
+      card.appendChild(reference);
+      hasContent = true;
+    }
+
+    if (hasContent && (values.scripture || BODY_SECTIONS.some(function (s) { return values[s.key]; }))) {
+      card.appendChild(element("hr", "rule"));
+    }
+
+    if (values.scripture) {
+      var block = element("blockquote", "scripture");
+      block.appendChild(element("p", "", values.scripture));
+      card.appendChild(block);
+      hasContent = true;
+    }
+
+    BODY_SECTIONS.forEach(function (section) {
+      if (!values[section.key]) return;
+      var wrapper = element("section", "card-section" + (section.className ? " " + section.className : ""));
+      wrapper.appendChild(element("h2", "", section.heading));
+      wrapper.appendChild(element("p", "", values[section.key]));
+      card.appendChild(wrapper);
+      hasContent = true;
+    });
+
+    return hasContent ? card : null;
+  }
+
+  function renderInto(mount, values) {
+    mount.replaceChildren();
+    var card = buildCard(values);
+    if (card) {
+      mount.appendChild(card);
+    } else {
+      var empty = element("p", "", "Your card will appear here as you type.");
+      empty.style.cssText = "color:var(--color-sage);font-size:.95rem;padding:18px;border:1px dashed var(--color-border);border-radius:12px;text-align:center";
+      mount.appendChild(empty);
+    }
+    return card;
+  }
+
+  function onFormChange() {
+    renderInto(previewMount, readValues());
+    saveDraft();
+  }
+
+  // ---------- Screenshot mode ----------
+  // Shrinks text step by step (never below a readable floor) so the whole card fits one screen when possible.
+  function fitCardToScreen() {
+    var card = stageMount.firstElementChild;
+    if (!card || !card.classList.contains("card")) return;
+    var available = window.innerHeight - 28;
+    var size = window.innerWidth >= 700 ? 18 : 17;
+    var floor = 14;
+    card.style.setProperty("--base", size + "px");
+    while (card.offsetHeight > available && size > floor) {
+      size -= 0.5;
+      card.style.setProperty("--base", size + "px");
+    }
+  }
+
+  function showControlsBriefly() {
+    controls.classList.remove("faded");
+    clearTimeout(hideControlsTimer);
+    hideControlsTimer = setTimeout(function () { controls.classList.add("faded"); }, 4000);
+  }
+
+  function enterScreenshotMode() {
+    var values = readValues();
+    var card = renderInto(stageMount, values);
+    if (!card) { alert("Add some devotional content first, or tap Load sample."); return; }
+    document.body.classList.add("screenshot");
+    stage.hidden = false;
+    window.scrollTo(0, 0);
+    fitCardToScreen();
+    showControlsBriefly();
+  }
+
+  function leaveScreenshotMode() {
+    clearTimeout(hideControlsTimer);
+    stage.hidden = true;
+    document.body.classList.remove("screenshot");
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Wiring ----------
+  buildForm();
+  var draft = loadDraft();
+  writeValues(draft || { date: todayAsInputValue() });
+
+  document.getElementById("createButton").addEventListener("click", enterScreenshotMode);
+  document.getElementById("backButton").addEventListener("click", leaveScreenshotMode);
+  document.getElementById("printButton").addEventListener("click", function () { window.print(); });
+  document.getElementById("sampleButton").addEventListener("click", function () {
+    var hasText = FIELDS.some(function (f) { return f.key !== "date" && inputs[f.key].value.trim(); });
+    if (!hasText || confirm("Replace what you have typed with the sample devotional?")) writeValues(SAMPLE);
+  });
+  document.getElementById("clearButton").addEventListener("click", function () {
+    if (confirm("Clear every field? This cannot be undone.")) writeValues({ date: todayAsInputValue() });
+  });
+
+  // Tap anywhere outside the buttons to show or hide the controls (keeps screenshots clean).
+  stage.addEventListener("click", function (event) {
+    if (event.target.closest("button")) { showControlsBriefly(); return; }
+    if (controls.classList.contains("faded")) showControlsBriefly();
+    else { clearTimeout(hideControlsTimer); controls.classList.add("faded"); }
+  });
+  document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !stage.hidden) leaveScreenshotMode(); });
+  window.addEventListener("resize", function () { if (!stage.hidden) fitCardToScreen(); });
+  window.addEventListener("orientationchange", function () { setTimeout(function () { if (!stage.hidden) fitCardToScreen(); }, 250); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!stage.hidden) fitCardToScreen(); });
+})();
+</script>
+</body>
+</html>
